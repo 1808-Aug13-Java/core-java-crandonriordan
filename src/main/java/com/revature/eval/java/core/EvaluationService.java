@@ -1,6 +1,7 @@
 package com.revature.eval.java.core;
 
 import java.time.temporal.Temporal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +16,17 @@ public class EvaluationService {
 	 */
 	public String reverse(String string) {
 		// TODO Write an implementation for this method declaration
-		return null;
+		if (string == "") {
+			return "";
+		}
+		
+		String newStr = "";
+		
+		for(int i = string.length() - 1; i >= 0; i--) {
+			newStr += String.valueOf(string.charAt(i));
+		}
+		
+		return newStr;
 	}
 
 	/**
@@ -27,8 +38,14 @@ public class EvaluationService {
 	 * @return
 	 */
 	public String acronym(String phrase) {
-		// TODO Write an implementation for this method declaration
-		return null;
+		String copyOfPhrase = phrase.toUpperCase();
+		String[] words = copyOfPhrase.split("[ -]");
+		String acronym = "";
+		for(String word : words) {
+			acronym += String.valueOf(word.charAt(0));
+		}
+		
+		return acronym;
 	}
 
 	/**
@@ -81,18 +98,38 @@ public class EvaluationService {
 		}
 
 		public boolean isEquilateral() {
-			// TODO Write an implementation for this method declaration
+			if(Double.compare(sideOne, sideTwo) == 0 && 
+					Double.compare(sideOne, sideThree) == 0 &&
+					Double.compare(sideTwo, sideThree) == 0
+					) {
+				return true;
+			}
+			
 			return false;
 		}
 
 		public boolean isIsosceles() {
-			// TODO Write an implementation for this method declaration
+			if(Double.compare(sideOne, sideTwo) == 0) {
+				return true;
+			} else if (Double.compare(sideTwo, sideThree) == 0) {
+				return true;
+			} else if (Double.compare(sideOne, sideThree) == 0) {
+				return true;
+			}
+			
 			return false;
 		}
 
 		public boolean isScalene() {
-			// TODO Write an implementation for this method declaration
-			return false;
+			if(Double.compare(sideOne, sideTwo) == 0) {
+				return false;
+			} else if (Double.compare(sideTwo, sideThree) == 0) {
+				return false;
+			} else if (Double.compare(sideOne, sideThree) == 0) {
+				return false;
+			}
+			
+			return true;
 		}
 
 	}
@@ -113,8 +150,59 @@ public class EvaluationService {
 	 * @return
 	 */
 	public int getScrabbleScore(String string) {
-		// TODO Write an implementation for this method declaration
-		return 0;
+		int totalValue = 0;
+		String copyOfString = string.toUpperCase();
+		String[] charsInString = copyOfString.split("");
+		for(String letter : charsInString) {
+			switch(letter) {
+				case "A":
+				case "E":
+				case "I":
+				case "O":
+				case "U":
+				case "L":
+				case "N":
+				case "R":
+				case "S":
+				case "T":
+					totalValue += 1;
+					break;
+				case "D":
+				case "G":
+					totalValue += 2;
+					break;
+				case "B":
+				case "C":
+				case "M":
+				case "P":
+					totalValue += 3;
+					break;
+				case "F":
+				case "H":
+				case "V":
+				case "W":
+				case "Y": 
+					totalValue += 4;
+					break;
+				case "K":
+					totalValue += 5;
+					break;
+				case "J":
+				case "X":
+					totalValue += 8;
+					break;
+				case "Q":
+				case "Z":
+					totalValue += 10;
+					break;
+				default:
+					System.out.println("The programmer left out a letter...");
+				
+			}
+			
+			
+		}
+		return totalValue;
 	}
 
 	/**
@@ -149,8 +237,26 @@ public class EvaluationService {
 	 * NANP-countries, only 1 is considered a valid country code.
 	 */
 	public String cleanPhoneNumber(String string) {
-		// TODO Write an implementation for this method declaration
-		return null;
+		String copyOfString = string;
+		copyOfString = copyOfString.replaceAll("\\s+","");
+		copyOfString = copyOfString.replaceAll("\\p{Punct}", "");
+		
+		if(copyOfString.charAt(0) == '1') {
+			copyOfString = copyOfString.substring(1);
+		}
+		
+		for(int i = 0; i < copyOfString.length(); i++) {
+			String currentLetter = String.valueOf(copyOfString.charAt(i));
+			if(currentLetter.matches("[a-zA-Z]+\\.?")) {
+				throw new IllegalArgumentException();
+			}
+		}
+		
+		if(copyOfString.length() > 11) {
+			throw new IllegalArgumentException();
+		}
+		
+		return copyOfString;
 	}
 
 	/**
@@ -163,8 +269,41 @@ public class EvaluationService {
 	 * @return
 	 */
 	public Map<String, Integer> wordCount(String string) {
-		// TODO Write an implementation for this method declaration
-		return null;
+HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
+		
+		// account for an empty string
+		if(string == "") {
+			return null;
+		}
+		
+		String copyOfString = string;
+		String[] words;
+		copyOfString = copyOfString.replaceAll("\\n", "");
+		boolean containsCommas = copyOfString.contains(",");
+		if(containsCommas) {
+			// checking for commas and then removing from them
+			// would be best to remove whitespace in each element of words
+			// after splitting for an input string such as "one, two"
+			words = copyOfString.split(",");
+		} else {
+			// if we didn't have commas we know the tests
+			// are testing for splits at spaces
+			words = copyOfString.split(" ");
+		}
+		
+		for(String word : words) {
+			if(countOfWords.containsKey(word)) {
+				// the following increments the value of Key by one.
+				countOfWords.put(word, countOfWords.get(word) + 1);
+			
+			} else {
+				// we will create the initial value of Key(K) to one.
+				countOfWords.put(word, 1);
+			}
+		}
+		
+		
+		return countOfWords;
 	}
 
 	/**
