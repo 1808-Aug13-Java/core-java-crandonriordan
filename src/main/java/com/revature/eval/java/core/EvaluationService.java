@@ -1,9 +1,13 @@
 package com.revature.eval.java.core;
 
 import java.time.temporal.Temporal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class EvaluationService {
 
@@ -343,10 +347,27 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 	 */
 	static class BinarySearch<T> {
 		private List<T> sortedList;
-
+		
 		public int indexOf(T t) {
-			// TODO Write an implementation for this method declaration
-			return 0;
+			
+			List<Integer> copyList = (List<Integer>) sortedList;
+			int index = copyList.size() / 2;
+			boolean found = false;
+			int copyOfT = (int) t;
+			while(!found) {
+				if(copyList.get(index) == copyOfT) {
+					return index;
+				} else if (copyList.get(index) < copyOfT) {
+					// right side
+					copyList = copyList.subList(0, index);
+					index = copyList.size() / 2;
+				} else if (copyList.get(index) > copyOfT) {
+					// left side
+					copyList = copyList.subList(index, copyList.size());
+					index = copyList.size() / 2;
+				}
+			}
+			return index;
 		}
 
 		public BinarySearch(List<T> sortedList) {
@@ -381,9 +402,68 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 	 * @param string
 	 * @return
 	 */
+	
 	public String toPigLatin(String string) {
-		// TODO Write an implementation for this method declaration
-		return null;
+		String[] wordsToConvert = string.toLowerCase().split(" ");
+		ArrayList<String> converted = new ArrayList<String>();
+		
+		for(String word : wordsToConvert) {
+			String translatedWord = "";
+			// handle vowels
+			switch(word.charAt(0)) {
+				case 'a': 
+				case 'e':
+				case 'i':
+				case 'o':
+				case 'u':
+					translatedWord = word + "ay";
+					converted.add(translatedWord);
+			}
+			
+			// handle consonant clusters
+			String[] clusters = {"sm", "sch", "st",
+			                "th", "tr", "gl", "fl"};
+			String twoL = word.substring(0, 2);
+			String threeL = word.substring(0, 3);
+			for (String cluster : clusters) {
+				// looking for a consonant cluster of length 2
+				// if so perform the correct operation
+				if (cluster.equals(twoL)) {
+					translatedWord = word.substring(3) + twoL + "ay";
+					return translatedWord;
+				} else if (cluster.equals(threeL)) {
+					translatedWord = word.substring(4) + threeL + "ay";
+					converted.add(translatedWord);
+				}
+			}
+			
+			// handle consonants
+			translatedWord = word.substring(1) + String.valueOf(word.charAt(0)) + "ay";
+			converted.add(translatedWord);
+				
+			
+			
+			
+		}
+		
+		String phrase = "";
+		
+		for(int i = 0; i < converted.size(); i++) {
+			if(converted.size() == 1) {
+				phrase = converted.get(0);
+				return phrase;
+			}
+			// don't add space at end of phrase
+			if(i == converted.size() - 1) {
+				phrase += converted.get(i);
+				break;
+			}
+			
+			phrase += converted.get(i) + " ";
+			
+		}
+		
+		return phrase;
 	}
 
 	/**
@@ -402,7 +482,21 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 	 * @return
 	 */
 	public boolean isArmstrongNumber(int input) {
-		// TODO Write an implementation for this method declaration
+		// regex doesn't make "" the front of the list;
+		String[] digits = String.valueOf(input).split("(?<=.)");
+		
+		int armStrongTotal = 0;
+		
+		for(String digit : digits) {
+			armStrongTotal += Math.pow(Integer.parseInt(digit), digits.length);
+		}
+		
+		
+		if(armStrongTotal == input) {
+			
+			return true;
+		}
+		// System.out.println("input of " + input + " isn't an armstrongnumber");
 		return false;
 	}
 
@@ -418,7 +512,39 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 	 */
 	public List<Long> calculatePrimeFactorsOf(long l) {
 		// TODO Write an implementation for this method declaration
-		return null;
+		List<Long> factors = new ArrayList<Long>();
+		long number = l;
+		// while it is still even
+		while(number % 2 == 0) {
+			factors.add( (long) 2 );
+			number = number / 2;
+		}
+		
+		// if 2 is no longer the prime factor
+		// then the number is now an odd number
+		// i is set to three due to 1 not being a prime number
+		// we increment our indexer, i, by two to ensure it 
+		// stays an odd number
+		for(int i = 3; i <= Math.sqrt((double) number); i += 2) {
+			
+			while(number % i == 0) {
+				factors.add( (long) i );
+				//
+				number = number / i;
+			}
+			
+		}
+		
+		// if any of the above cases didnt work
+		// we know it is an odd number above two that is prime
+		// our number must be a prime number that our previous for loop didn't catch
+		if(number > 2) {
+			factors.add((long) number);
+		}
+		
+		// System.out.println(factors);
+		return factors;
+		//44
 	}
 
 	/**
@@ -457,7 +583,45 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 
 		public String rotate(String string) {
 			// TODO Write an implementation for this method declaration
-			return null;
+			char[] characters = string.toCharArray();
+			char[] scrambledChars = new char[characters.length];
+						
+			
+			for(int i = 0; i < characters.length; i++) {
+				int charCode = (int) characters[i];
+				scrambledChars[i] = (char) changeCharCode(charCode, key);
+			}
+			
+			String scrambledPhrase = new String(scrambledChars);
+			
+			return scrambledPhrase;
+		}
+		
+		private static int changeCharCode(int charCode, int key) {
+			int copyChar = charCode;
+			
+			if (charCode >= 65 && charCode <= 90) {
+				// handle capital characters
+				for(int i = 1; i <= key; i++) {
+					if(copyChar != 90) {
+						copyChar++;
+					} else if (copyChar == 90) {
+						copyChar = 65;
+					}
+				}
+				
+			} else if (charCode >= 97 && charCode <= 122) {
+				// handle lower case characters
+				for(int i = 1; i <= key; i++) {
+					if(copyChar != 122) {
+						copyChar++;
+					} else if (copyChar == 122) {
+						copyChar = 97;
+					}
+				}
+			}
+			
+			return copyChar;
 		}
 
 	}
@@ -475,10 +639,37 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 	 * @return
 	 */
 	public int calculateNthPrime(int i) {
-		// TODO Write an implementation for this method declaration
-		return 0;
+		if(i == 0) {
+			throw new IllegalArgumentException();
+		}
+		
+		
+		ArrayList<Integer> primes = new ArrayList<Integer>();
+		
+		int number = 2;
+		while(primes.size() < i) {
+			
+			if(isPrime(number)) {
+				primes.add(number);
+			}
+			
+			// increment index and number if it we didn't find
+			number++;
+			
+		}
+		System.out.println(primes);
+		return primes.get(primes.size() - 1);
 	}
 
+	private boolean isPrime(int num) {
+		for(int i = 2; i < num; i++) {
+			if(num % i == 0) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	/**
 	 * 13 & 14. Create an implementation of the atbash cipher, an ancient encryption
 	 * system created in the Middle East.
@@ -511,9 +702,34 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 		 * @param string
 		 * @return
 		 */
+		
+		
+		
+		public static final String alphabet = "abcdefghijklmnopqrstuvwxyz";
+		public static final String reverseAlphabet = new StringBuilder(alphabet).reverse().toString();
+
+		public static final String[] alphabetArr = alphabet.split("");
+		public static final String[] reverseArr = reverseAlphabet.split("");
+		
 		public static String encode(String string) {
 			// TODO Write an implementation for this method declaration
-			return null;
+			String[] characters = string.split("");
+			String[] scrambledChars = new String[characters.length];
+			
+			for(int i = 0; i < characters.length; i++) {
+				int index = Arrays.stream(alphabetArr) 
+						.collect(Collectors.toList())
+						.indexOf(characters[i]);
+				if(index == -1) {
+					// not a letter
+					continue;
+				}
+				scrambledChars[i] = reverseArr[index];
+			}
+			
+			String scrambledPhrase = String.join("", scrambledChars);
+			
+			return scrambledPhrase;
 		}
 
 		/**
@@ -523,9 +739,27 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 		 * @return
 		 */
 		public static String decode(String string) {
-			// TODO Write an implementation for this method declaration
-			return null;
+			
+			String[] scrambledCharacters = string.split("");
+			String[] characters = new String[scrambledCharacters.length];
+			
+			for(int i = 0; i < characters.length; i++) {
+				int index = Arrays.stream(alphabetArr) 
+						.collect(Collectors.toList())
+						.indexOf(scrambledCharacters[i]);
+				if(index == -1) {
+					// not a letter
+					continue;
+				}
+				characters[i] = alphabetArr[index];
+			}
+			
+			String deScrambledPhrase = String.join("", characters);
+			
+			return deScrambledPhrase;
 		}
+		
+		
 	}
 
 	/**
