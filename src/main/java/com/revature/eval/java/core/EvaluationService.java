@@ -1,13 +1,25 @@
 package com.revature.eval.java.core;
 
+import java.nio.CharBuffer;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class EvaluationService {
 
@@ -350,24 +362,45 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 		
 		public int indexOf(T t) {
 			
-			List<Integer> copyList = (List<Integer>) sortedList;
-			int index = copyList.size() / 2;
+			ArrayList<Integer> values = new ArrayList<Integer>();
+			
+			for(int i = 0; i < sortedList.size(); i++) {
+				IntStream stream = CharBuffer.wrap(sortedList.get(i)
+						.toString().toCharArray()).chars();
+				
+				int number = stream.sum();
+				
+				values.add(number);
+			}
+
+			int middleIndex = values.size() % 2 == 0 ?
+					(values.size() / 2) + 1   : values.size() / 2;
+			int lowIndex = 0;
+			int highIndex = values.size();
+			
+			IntStream tStream = CharBuffer.wrap(t.toString().toCharArray()).chars();
+			int valueOfT = tStream.sum();
+			int copyOfT = valueOfT;
+
 			boolean found = false;
-			int copyOfT = (int) t;
+			
 			while(!found) {
-				if(copyList.get(index) == copyOfT) {
-					return index;
-				} else if (copyList.get(index) < copyOfT) {
-					// right side
-					copyList = copyList.subList(0, index);
-					index = copyList.size() / 2;
-				} else if (copyList.get(index) > copyOfT) {
-					// left side
-					copyList = copyList.subList(index, copyList.size());
-					index = copyList.size() / 2;
+				for(int i = lowIndex; i < highIndex; i++) {
+					
+					if(values.get(middleIndex) == copyOfT) {
+						return middleIndex;
+					} else if (values.get(middleIndex) < copyOfT) {
+						lowIndex = middleIndex;
+						middleIndex = (highIndex + lowIndex) / 2;
+						break;
+					} else if (values.get(middleIndex) > copyOfT) {
+						highIndex = middleIndex;
+						middleIndex = (highIndex + lowIndex) / 2;
+						break;
+					}
 				}
 			}
-			return index;
+			return -1;
 		}
 
 		public BinarySearch(List<T> sortedList) {
@@ -406,7 +439,7 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 	public String toPigLatin(String string) {
 		String[] wordsToConvert = string.toLowerCase().split(" ");
 		ArrayList<String> converted = new ArrayList<String>();
-		
+		boolean isCluster = false;
 		for(String word : wordsToConvert) {
 			String translatedWord = "";
 			// handle vowels
@@ -418,38 +451,45 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 				case 'u':
 					translatedWord = word + "ay";
 					converted.add(translatedWord);
+					continue;
 			}
 			
 			// handle consonant clusters
 			String[] clusters = {"sm", "sch", "st",
-			                "th", "tr", "gl", "fl"};
+			                "th", "tr", "gl", "fl", "qu"};
 			String twoL = word.substring(0, 2);
 			String threeL = word.substring(0, 3);
 			for (String cluster : clusters) {
+				isCluster = false;
 				// looking for a consonant cluster of length 2
 				// if so perform the correct operation
 				if (cluster.equals(twoL)) {
-					translatedWord = word.substring(3) + twoL + "ay";
-					return translatedWord;
-				} else if (cluster.equals(threeL)) {
-					translatedWord = word.substring(4) + threeL + "ay";
+					translatedWord = word.substring(2) + twoL + "ay";
 					converted.add(translatedWord);
+					isCluster = true;
+					continue;
+				} else if (cluster.equals(threeL)) {
+					translatedWord = word.substring(3) + threeL + "ay";
+					converted.add(translatedWord);
+					isCluster = true;
+					continue;
 				}
+			}
+			
+			if(isCluster) {
+				continue;
 			}
 			
 			// handle consonants
 			translatedWord = word.substring(1) + String.valueOf(word.charAt(0)) + "ay";
 			converted.add(translatedWord);
-				
-			
-			
 			
 		}
 		
 		String phrase = "";
 		
 		for(int i = 0; i < converted.size(); i++) {
-			if(converted.size() == 1) {
+			if(wordsToConvert.length == 1) {
 				phrase = converted.get(0);
 				return phrase;
 			}
@@ -496,7 +536,7 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 			
 			return true;
 		}
-		// System.out.println("input of " + input + " isn't an armstrongnumber");
+		
 		return false;
 	}
 
@@ -542,7 +582,7 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 			factors.add((long) number);
 		}
 		
-		// System.out.println(factors);
+
 		return factors;
 		//44
 	}
@@ -657,7 +697,7 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 			number++;
 			
 		}
-		System.out.println(primes);
+		
 		return primes.get(primes.size() - 1);
 	}
 
@@ -713,10 +753,17 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 		
 		public static String encode(String string) {
 			// TODO Write an implementation for this method declaration
+			string = string.replaceAll("\\p{P}", "").replaceAll("\\s+","").toLowerCase();
+			
 			String[] characters = string.split("");
 			String[] scrambledChars = new String[characters.length];
-			
 			for(int i = 0; i < characters.length; i++) {
+				if(Character.isDigit(characters[i].charAt(0))) {
+					// if it's a number we don't want to do anything to scramble it
+					scrambledChars[i] = characters[i];
+					continue;
+					
+				}
 				int index = Arrays.stream(alphabetArr) 
 						.collect(Collectors.toList())
 						.indexOf(characters[i]);
@@ -728,7 +775,14 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 			}
 			
 			String scrambledPhrase = String.join("", scrambledChars);
-			
+			// regex that takes every five chars and adds a space at the end
+			// unfortunately adds space at end if the last scrambled
+			// word is a length of five
+			scrambledPhrase = scrambledPhrase.replaceAll("(.{5})", "$1 ");
+			// long ternary, might be more readable to do an an if
+			scrambledPhrase = scrambledPhrase.charAt(scrambledPhrase.length() - 1) 
+					== ' ' ? scrambledPhrase.substring(0, scrambledPhrase.length() - 1) :
+						scrambledPhrase;
 			return scrambledPhrase;
 		}
 
@@ -740,20 +794,31 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 		 */
 		public static String decode(String string) {
 			
-			String[] scrambledCharacters = string.split("");
+			String[] scrambledCharacters = string.replaceAll(" ", "").split("");
 			String[] characters = new String[scrambledCharacters.length];
 			
 			for(int i = 0; i < characters.length; i++) {
+				// this aggregate function
+				// allows us to get the index by arr -> list conversion
 				int index = Arrays.stream(alphabetArr) 
 						.collect(Collectors.toList())
 						.indexOf(scrambledCharacters[i]);
+			
+				if(Character.isDigit(scrambledCharacters[i].charAt(0))) {
+					// if it's a number we don't want to do anything to scramble it
+					characters[i] = scrambledCharacters[i];
+					continue;
+					
+				}
+				
 				if(index == -1) {
 					// not a letter
 					continue;
 				}
-				characters[i] = alphabetArr[index];
+
+				characters[i] = reverseArr[index];
 			}
-			
+
 			String deScrambledPhrase = String.join("", characters);
 			
 			return deScrambledPhrase;
@@ -786,6 +851,38 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 	 */
 	public boolean isValidIsbn(String string) {
 		// TODO Write an implementation for this method declaration
+		char[] digits = string.replaceAll("[a-wyzA-Wyz-]", "").toCharArray();
+		if(digits.length != 10) {
+			return false;
+		}
+		
+		int multiplier = 10;
+		int sum = 0;
+		
+		for(char digit : digits) {
+			
+			int number = 0;
+			if(multiplier == 1 && digit == 'X') {
+				sum += 10;
+				continue;
+			}
+			
+			if(Character.isDigit(digit)) {
+				number = Integer.parseInt(String.valueOf(digit)) * multiplier;
+			} else {
+				return false;
+			}
+			
+			
+			
+			sum += number;
+			multiplier--;
+		}
+		
+		if(sum % 11 == 0) {
+			return true;
+		}
+		
 		return false;
 	}
 
@@ -803,6 +900,14 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 	 * @return
 	 */
 	public boolean isPangram(String string) {
+		string = string.toLowerCase().replaceAll("[^a-zA-Z]", "");
+		
+		HashSet<String> uniqueLetters = new HashSet<String>(
+				Arrays.asList(string.split("")));
+		
+		if(uniqueLetters.size() == 26) {
+			return true;
+		}
 		// TODO Write an implementation for this method declaration
 		return false;
 	}
@@ -817,7 +922,29 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 	 */
 	public Temporal getGigasecondDate(Temporal given) {
 		// TODO Write an implementation for this method declaration
-		return null;
+		int year = given.get(ChronoField.YEAR);
+		int month = given.get(ChronoField.MONTH_OF_YEAR);
+		int day = given.get(ChronoField.DAY_OF_MONTH);
+		int hour = 0;
+		int minutes = 0;
+		int seconds = 0;
+		if(given.isSupported(ChronoField.SECOND_OF_MINUTE)) {
+			seconds = given.get(ChronoField.SECOND_OF_MINUTE);
+			minutes = given.get(ChronoField.MINUTE_OF_HOUR);
+			hour = given.get(ChronoField.HOUR_OF_DAY);
+		} else if(given.isSupported(ChronoField.MINUTE_OF_HOUR)) {
+			minutes = given.get(ChronoField.MINUTE_OF_HOUR);
+			hour = given.get(ChronoField.HOUR_OF_DAY);
+		} else if(given.isSupported(ChronoField.HOUR_OF_DAY)) {
+			hour = given.get(ChronoField.HOUR_OF_DAY);
+		}
+		
+		LocalDateTime casted = LocalDateTime.of(year, month, day, 
+				hour, minutes, seconds);
+		
+		casted = casted.plus((long) Math.pow(10, 9), ChronoUnit.SECONDS);
+		
+		return casted;
 	}
 
 	/**
@@ -835,7 +962,19 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 	 */
 	public int getSumOfMultiples(int i, int[] set) {
 		// TODO Write an implementation for this method declaration
-		return 0;
+		HashSet<Integer> uniqueMultiples = new HashSet<Integer>();
+		
+		for(int j = 1; j < i; j++) {
+			for(int numberToCheck : set) {
+				if(j % numberToCheck == 0) {
+					uniqueMultiples.add(j);
+				}
+			}
+		}
+		
+		int sum = uniqueMultiples.stream().mapToInt(num -> num).sum();
+		
+		return sum;
 	}
 
 	/**
@@ -876,6 +1015,50 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 	 */
 	public boolean isLuhnValid(String string) {
 		// TODO Write an implementation for this method declaration
+		string = string.replace(" ", "");
+		
+		char[] digitsChar = string.toCharArray();
+		int[] digits = new int[digitsChar.length];
+		int[] doubledDigits = new int[digitsChar.length];
+		
+		for(int i = 0; i < digits.length; i++) {
+			// sneaky way to get the numeric value from
+			// ASCII codes
+			digits[i] = digitsChar[i] - '0';
+		}
+		
+		int checkSum = 0;
+		
+		Pattern p = Pattern.compile("[^0-9]");
+		Matcher m = p.matcher(string);
+		if(m.find()) {
+			return false;
+		}
+		
+		int checker = digits.length % 2 == 0 ? 3 : 2;
+		int checkerSkip = digits.length % 2 == 0 ? 3 : 2;
+		int index = 0;
+		for(int digit : digits) {
+			int number = 0;
+			
+			if(checker % checkerSkip - 1 == 0) {
+				number = digit * 2;
+				number = number > 9 ? number - 9 : number;
+				doubledDigits[index] = number;
+			} else {
+				doubledDigits[index] = digit;
+			}
+			
+			checker++;
+			index++;
+		}
+		
+		int sum = IntStream.of(doubledDigits).sum();
+
+		if(sum % 10 == 0) {
+			return true;
+		}
+		
 		return false;
 	}
 
@@ -908,7 +1091,48 @@ HashMap<String, Integer> countOfWords = new HashMap<String, Integer>();
 	 */
 	public int solveWordProblem(String string) {
 		// TODO Write an implementation for this method declaration
-		return 0;
+		String[] words = string.replaceAll("[.!?\\\\]", "").split(" ");
+		String[] operatorStrs = { "plus", "minus", "multiplied", "divided" };
+		List<String> operators = Arrays.asList(operatorStrs);
+		String operatorPresent = "";
+		int firstNum = 0;
+		int secondNum = 0;
+		int answer = 0;
+		for(String word: words) {
+			try {
+				
+				if(operators.contains(word)) {
+					operatorPresent = word;
+				}
+				
+				if(firstNum == 0) {
+					firstNum = Integer.parseInt(word);
+				} else if(secondNum == 0) {
+					secondNum = Integer.parseInt(word);
+				}
+			} catch (Exception e) {
+				// do nothing with exception
+			}
+		}
+		
+		switch(operatorPresent) {
+			case "plus":
+				answer = firstNum + secondNum;
+				break;
+			case "minus":
+				answer = firstNum - secondNum;
+				break;
+			case "multiplied":
+				answer = firstNum * secondNum;
+				break;
+			case "divided":
+				answer = firstNum / secondNum;
+				break;
+		}
+		
+		
+		
+		return answer;
 	}
 
 }
